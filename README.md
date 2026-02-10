@@ -1,103 +1,105 @@
-# Atmospheric Particle Motion Simulation (Phase A)
-**Simulation of Atmospheric Particle Movement – A Framework for Modeling Air Parcel Dynamics**
+# Simulation of Atmospheric Particle Movement
+**A Framework for Modeling Air Parcel Dynamics (Phase A)**
 
-This repository contains the **Phase A** deliverables for a final project at **Braude College of Engineering**.  
-The project designs a **molecular-dynamics-inspired Lagrangian framework** for simulating air-parcel motion in a rotating, thermodynamically forced atmosphere.
+## Overview
+This project develops a research-oriented simulation framework for modeling air parcel motion in a planetary atmosphere using a Lagrangian, molecular-dynamics-inspired approach. The simulator tracks a large ensemble of interacting parcels, each carrying its own kinematic and thermodynamic state. Unlike trajectory models driven by a prescribed wind field, large-scale transport and circulation patterns are expected to emerge from particle dynamics under thermal forcing and rotation, and are diagnosed from particle statistics.
 
-> **Key principle:** Large-scale circulation is **not imposed** as a prescribed background wind field.  
-> Instead, macroscopic transport patterns are expected to **emerge** from the collective particle dynamics under thermal forcing and rotation, and are diagnosed from particle statistics.
+## Core Concept: MD-Inspired Emergent Circulation
+- No imposed background wind field.
+- Global-scale circulation is treated as an emergent outcome of:
+  - particle–particle interactions (pressure-like behavior),
+  - gravity, buoyancy, and drag,
+  - thermal forcing via relaxation toward a target temperature profile,
+  - rotation in a rotating reference frame.
 
----
+## Model State (Per Parcel)
+- Position and velocity: x(t), v(t)
+- Thermodynamics: T(t), q(t), P(t), ρ(t)
 
-## Project Overview
-We model the atmosphere as a set of interacting **coarse-grained air parcels** (particles).  
-Each parcel carries its own state:
-- Position and velocity: \( \mathbf{x}(t), \mathbf{v}(t) \)
-- Optional thermodynamics: \( T(t), q(t), P(t), \rho(t) \)
+## Equations of Motion
+The dynamics are formulated as an ODE system advanced in time:
 
-The parcel dynamics are advanced in time using an MD-style integrator, while global-scale patterns are obtained by **diagnostics** (binning/averaging parcel velocities) rather than being injected as external winds.
+**Kinematics**
+- dx/dt = v
 
----
+**Momentum**
+- m dv/dt = Fg + Fb + Fd + Fcor + Fint
 
-## Physical Model (High Level)
-Parcel motion follows Newton’s second law in a rotating reference frame:
+### Forces
+**Gravity**
+- Fg = −m g k
 
-\[
-\frac{d\mathbf{x}}{dt} = \mathbf{v}
-\]
-\[
-m\frac{d\mathbf{v}}{dt} = \mathbf{F}_g + \mathbf{F}_b + \mathbf{F}_d + \mathbf{F}_{cor} + \mathbf{F}_{int}
-\]
+**Buoyancy**
+- Fb = V (ρenv − ρparcel) g k
 
-Where:
-- Gravity:
-\[
-\mathbf{F}_g = - m g \mathbf{k}
-\]
-- Buoyancy (from parcel–environment density contrast):
-\[
-\mathbf{F}_b = V(\rho_{env} - \rho_{parcel}) g \mathbf{k}
-\]
-- Linear drag:
-\[
-\mathbf{F}_d = - C_d \mathbf{v}
-\]
-- Coriolis force:
-\[
-\mathbf{F}_{cor} = -2m(\boldsymbol{\Omega} \times \mathbf{v})
-\]
-- Inter-parcel interactions (pressure-like coupling, local neighborhood):
-\[
-\mathbf{F}_{int,i} = \sum_{j \ne i} -\nabla_{\mathbf{x}_i} V(r_{ij}), \quad r_{ij} = \lVert \mathbf{x}_i - \mathbf{x}_j \rVert
-\]
+**Linear Drag**
+- Fd = −Cd v
+- Cd can be set via a damping timescale τd: Cd = m/τd
 
-Thermal forcing is represented via Newtonian relaxation toward a target profile:
-\[
-\frac{dT}{dt} = -\frac{T - T_{eq}(\phi, z)}{\tau}
-\]
+**Coriolis (Rotating Frame)**
+- Fcor = −2 m (Ω × v)
 
-Optional moist processes (condensation + latent heating) are planned for Phase B.
+**Inter-Parcel Interaction (Pressure-Like, Short-Range)**
+- Fint,i = Σj≠i ( −∇xi V(rij) )
+- rij = |xi − xj|
+- V(r) is a repulsive potential with cutoff radius rc to keep interactions local.
 
----
+## Thermal Forcing (Simplified Radiative Effects)
+Radiative heating/cooling is represented by Newtonian relaxation toward a target temperature profile Teq(φ, z):
 
-## Scaled Virtual Environment (Target Configuration)
-To support meaningful emergence diagnostics, Phase A defines a scalable domain with a target regime such as:
-- Planetary radius: **\(R \sim 1000\,km\)**
-- Atmospheric depth: **\(H \sim 10{-}20\,km\)**
-- Particle count: **\(N \sim 20,000{-}50,000\)** (or higher if feasible)
-- Rotation: prescribed via period \(P\), with \(\Omega = 2\pi/P\)
+- dT/dt = −(T − Teq)/τ
 
-Final values will be selected in Phase B using stability, profiling, and convergence tests.
+This provides a controlled, computationally efficient forcing that can drive large-scale organization when combined with rotation and interactions.
 
----
+## Moist Processes
+Each parcel can carry specific humidity q. Saturation and condensation are modeled using simplified parameterizations:
+- Condensation is triggered when q > qsat(T, P).
+- Latent heating increases temperature and buoyancy.
+This enables controlled dry vs moist experiments.
 
-## Numerical Method
-Time integration is planned using **Velocity-Verlet** (common in MD).  
-The timestep \(dt\) is treated as a tunable parameter:
-- A small \(dt\) may be used for prototype/debug runs
-- A retuned \(dt\) will be selected for the target configuration using stability tests and convergence checks
+## Virtual Environment and Scaling
+The simulation supports two operating modes:
+1) Prototype/debug configuration (small and fast)
+2) Target configuration (large enough to diagnose global circulation patterns)
 
----
+Target-scale guidelines (design goal):
+- Planetary radius R ~ 1000 km
+- Atmospheric depth H ~ 10–20 km
+- Number of parcels N ~ 20,000–50,000 (or higher if feasible)
+- Rotation period P is chosen to preserve dynamically meaningful rotation effects.
 
-## Diagnostics: How “Emergent Circulation” Is Measured
-Since no background wind is imposed, circulation is diagnosed from the particles:
-- Bin parcels in **latitude–altitude** space \((\phi, z)\)
-- Compute mean velocity fields:
-  - \(\overline{\mathbf{v}}(\phi, z)\)
-- Look for statistically stable structures resembling:
-  - Hadley/Ferrel/Polar-like cells
-  - jet-like zonal flows
+Final parameter values are refined using stability tests, profiling, and convergence checks.
 
----
+## Numerical Integration
+The system is advanced using an explicit Velocity-Verlet integrator (standard in molecular dynamics). A prototype time step (e.g., dt = 0.1 s, scaled) is used initially and then re-tuned for the target configuration based on stability and sensitivity tests.
 
-## Tools & Technologies (Planned)
-- **C++** (core simulation engine)
-- **OpenMP** for multi-core parallelism
-- Neighbor search acceleration (e.g., **cell lists / spatial hashing**) for interaction cutoff
-- Output files for post-processing + visualization (format to be finalized in Phase B)
+## Software and Performance
+- Language: C++
+- Parallelization: OpenMP (multi-core acceleration)
+- Implementation focus:
+  - efficient neighbor search (e.g., cell lists),
+  - scalable force evaluation for short-range interactions,
+  - reproducible experiments and diagnostics.
 
-> Any post-processing tools will be treated as optional and separate from the engine.
+## Outputs and Diagnostics
+The simulator produces time-resolved parcel trajectories and thermodynamic variables for post-processing. Macroscopic circulation is diagnosed statistically by binning parcels (e.g., latitude–altitude bins) and computing mean velocity fields and circulation indicators to assess whether cell-like structures and jets emerge.
 
----
+## Validation Plan (Phase A)
+Validation includes:
+- Numerical stability: compare runs with dt and dt/2 and require convergence.
+- Benchmark tests:
+  - gravity-only free fall,
+  - drag relaxation,
+  - Coriolis-only inertial motion,
+  - moist saturation adjustment (when enabled).
+- Sensitivity analysis over key parameters (Cd, τ, τd, rc, etc.).
+- Performance scaling with increasing N and neighbor-search acceleration.
 
-## Repository Structure (Suggested / Phase A)
+
+## Team
+- Yasser Sadi
+- Diana Hujerat  
+Advisor: Dr. Zakharia Frenkel
+
+## Repository
+Atmospheric-Particle-Motion-Simulation-3D-Environmental-Modeling
