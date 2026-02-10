@@ -7,10 +7,10 @@ This project develops a research-oriented simulation framework for modeling air 
 ## Core Concept: MD-Inspired Emergent Circulation
 - No imposed background wind field.
 - Global-scale circulation is treated as an emergent outcome of:
-  - particle–particle interactions (pressure-like behavior),
-  - gravity, buoyancy, and drag,
-  - thermal forcing via relaxation toward a target temperature profile,
-  - rotation in a rotating reference frame.
+  - Particle–particle interactions (pressure-like behavior).
+  - Gravity, buoyancy, and drag.
+  - Thermal forcing via relaxation toward a target temperature profile.
+  - Rotation in a rotating reference frame.
 
 ## Model State (Per Parcel)
 - Position and velocity: x(t), v(t)
