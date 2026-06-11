@@ -45,4 +45,4 @@ compile_commands.json
 *.app
 
 # Debug information files
-*.dwo
+*.dwovenv/
