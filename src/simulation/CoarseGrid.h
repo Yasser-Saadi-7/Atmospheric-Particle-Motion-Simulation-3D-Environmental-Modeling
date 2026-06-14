@@ -43,6 +43,15 @@ struct CoarseCellData {
     double targetTemperature = 0.0;  // Assigned via Environment model
     
     // ----------------------------------------------------
+    // Stage 4 Sprint 4.3: Moisture Statistics
+    // ----------------------------------------------------
+    // Running sum of particle specific humidity values — accumulated during build().
+    double q_sum = 0.0;
+
+    // Mean specific humidity q_mean in this coarse cell — Stage 4.
+    double q_mean = 0.0;
+
+    // ----------------------------------------------------
     // Utilities
     // ----------------------------------------------------
     // Stores IDs of particles in this cell. Crucial for fast variance 

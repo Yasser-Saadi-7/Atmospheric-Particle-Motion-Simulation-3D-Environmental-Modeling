@@ -11,6 +11,7 @@
 #include "simulation/Integrator.h"
 #include "io/OutputWriter.h"
 #include "analysis/CirculationAccumulator.h"
+#include "analysis/StreamfunctionCalculator.h"
 
 class SimulationEngine {
 public:
@@ -40,7 +41,17 @@ private:
 
     // Executes the stochastic thermal collision process on all particles
     void applyThermalCollisions();
-    
+
+    // Stage 4 Sprint 4.5: condensation + latent heat release for all particles
+    void applyCondensation();
+
+    // Stage 4 Sprint 4.6: near-surface evaporation for particles in the lower layer
+    void applyNearSurfaceEvaporation();
+
+    // Stage 4 Sprint 4.7: water balance accounting
+    double computeTotalSpecificHumidity() const;
+    void   updateWaterBalanceDiagnostics(int step);
+
     // Grid management
     void updateCoarseGrid();
 
@@ -61,6 +72,32 @@ private:
     bool rotationActivated = false;
     // Stage 3: set to true when the circulation-accumulation start message is printed
     bool circulationLogPrinted = false;
+    // Stage 3: set to true when the streamfunction start message is printed
+    bool streamfunctionLogPrinted = false;
+
+    // Stage 4 Sprint 4.5: condensation accumulators.
+    // "ThisStep" counters are reset after each condensation log write (every logInterval).
+    // "Cumulative" counters are never reset.
+    double      condensationThisStep        = 0.0;
+    double      cumulativeCondensation      = 0.0;
+    double      latentHeatingThisStep       = 0.0;
+    double      cumulativeLatentHeating     = 0.0;
+    long long   condensationEventsThisStep  = 0;
+    long long   cumulativeCondensationEvents = 0;
+
+    // Stage 4 Sprint 4.6: evaporation accumulators (reset at log write, cumulative never reset).
+    double      evaporationThisStep         = 0.0;
+    double      cumulativeEvaporation       = 0.0;
+    long long   evaporationEventsThisStep   = 0;
+    long long   cumulativeEvaporationEvents = 0;
+
+    // Stage 4 Sprint 4.7: water balance state (never reset after initialization).
+    double initialTotalSpecificHumidity   = 0.0;
+    double currentTotalSpecificHumidity   = 0.0;
+    double waterBalanceExpected           = 0.0;
+    double waterBalanceError              = 0.0;
+    double waterBalanceRelativeError      = 0.0;
+    bool   waterBalanceInitialized        = false;
 
     // Random number generation
     std::mt19937 rng;
@@ -75,4 +112,7 @@ private:
 
     // Stage 3: longitude-averaged meridional circulation accumulator
     CirculationAccumulator circulationAccumulator;
+
+    // Stage 3: computes Psi from accumulated mass flux
+    StreamfunctionCalculator streamfunctionCalculator;
 };

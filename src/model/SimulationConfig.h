@@ -80,4 +80,121 @@ struct SimulationConfig {
     // If true, reset the accumulator after each write so each CSV represents
     // a fresh window rather than a growing cumulative average.
     bool resetCirculationAccumulatorAfterWrite = false;
+
+    // ====================================================
+    // Stage 3: Streamfunction (Psi)
+    // ====================================================
+    // How often to write streamfunction_step_XXXXX.csv (and circulation CSV).
+    // Combined trigger for both outputs to keep them in sync.
+    int streamfunctionOutputInterval = 5000;
+
+    // If true, streamfunction is computed and written whenever circulation
+    // averages are written (they share the same output trigger above).
+    bool writeStreamfunctionAfterCirculationOutput = true;
+
+    // Optional: minimum absolute mass-flux threshold.
+    // Reserved for future filtering; not applied to the integration itself.
+    double streamfunctionMinMassFluxThreshold = 0.0;
+
+    // ====================================================
+    // Stage 4 Sprint 4.1: Moisture State
+    // ====================================================
+    // Activate the moisture state (q_p carried by each particle).
+    bool enableMoisture = true;
+
+    // Near-surface specific humidity [kg/kg].
+    double initialSurfaceSpecificHumidity = 0.015;
+
+    // Fraction of atmosphereHeight defining the lower constant-humidity layer.
+    // Particles below (humiditySurfaceLayerFraction * H) receive the surface value.
+    double humiditySurfaceLayerFraction = 0.20;
+
+    // Exponential decay scale as a fraction of atmosphereHeight.
+    // Controls how quickly q_p falls off above the lower layer.
+    double humidityDecayScaleFraction = 0.30;
+
+    // ====================================================
+    // Stage 4 Sprint 4.2: Saturation Physics Scaling
+    // ====================================================
+    // Enables the saturation physics module (q_sat computations).
+    bool enableMoisturePhysics = true;
+
+    // Model temperature unit that maps to referenceKelvinTemperature.
+    double referenceModelTemperature = 1.0;
+
+    // Physical temperature [K] corresponding to referenceModelTemperature.
+    double referenceKelvinTemperature = 300.0;
+
+    // Kelvin change per model temperature unit: T_K = T_ref_K + scale * (T_model - T_ref_model).
+    double modelTemperatureKelvinScale = 50.0;
+
+    // Physical height [m] of the full atmosphere (maps to atmosphereHeight model units).
+    double atmospherePhysicalHeightMeters = 20000.0;
+
+    // Sea-level atmospheric pressure [Pa].
+    double seaLevelPressurePa = 101325.0;
+
+    // Pressure scale height [m] for the exponential profile: p(h) = p0 * exp(-h / H_scale).
+    double pressureScaleHeightMeters = 8500.0;
+
+    // Safety clamp bounds for physical temperature [K].
+    double minPhysicalTemperatureK = 180.0;
+    double maxPhysicalTemperatureK = 330.0;
+
+    // Safety clamp bounds for specific humidity [kg/kg].
+    double minSpecificHumidity = 0.0;
+    double maxSpecificHumidity = 0.05;
+
+    // ====================================================
+    // Stage 4 Sprint 4.4: Humidity Mixing During Collisions
+    // ====================================================
+    // If true, q_p is nudged toward q_mean_cell during thermal collision events.
+    bool enableHumidityMixing = true;
+
+    // Humidity exchange fraction per collision event.
+    // Negative sentinel value means: inherit thermalExchangeAlpha at runtime.
+    double humidityMixingAlpha = -1.0;
+
+    // ====================================================
+    // Stage 4 Sprint 4.5: Condensation and Latent Heat
+    // ====================================================
+    // Enable condensation: when q_p > q_sat, condense excess and release latent heat.
+    bool enableCondensation = true;
+
+    // Model-scaled latent heating coefficient [model-T / (kg/kg)].
+    // Physical Lv/cp is NOT used directly because T_p is in model units.
+    double latentHeatModelFactor = 0.05;
+
+    // Maximum condensation amount removed from q_p per particle per step [kg/kg].
+    double maxCondensationDeltaQPerStep = 1e-4;
+
+    // Supersaturation threshold: condensation fires only when q_p > q_sat + tolerance.
+    double supersaturationTolerance = 1e-10;
+
+    // ====================================================
+    // Stage 4 Sprint 4.6: Near-Surface Evaporation
+    // ====================================================
+    // Enable near-surface evaporation: when q_p < q_sat in the lower layer, add vapor.
+    bool enableEvaporation = true;
+
+    // Lower layer fraction: h_evap = evaporationLayerFraction * atmosphereHeight.
+    double evaporationLayerFraction = 0.15;
+
+    // Evaporation rate coefficient k_evap [1/time-unit].
+    double evaporationRate = 0.001;
+
+    // Safety clamp: maximum vapor added to q_p per particle per step [kg/kg].
+    double maxEvaporationDeltaQPerStep = 1e-5;
+
+    // ====================================================
+    // Stage 4 Sprint 4.7: Water Balance Logging
+    // ====================================================
+    // Enable moisture_balance.csv output and water balance diagnostics.
+    bool enableWaterBalanceLogging = true;
+
+    // Absolute error threshold: |total_q - expected_q| <= this → PASS.
+    double waterBalanceToleranceAbs = 1e-8;
+
+    // Relative error threshold: |error / expected| <= this → PASS.
+    double waterBalanceToleranceRel = 1e-6;
 };

@@ -8,7 +8,10 @@
 #include <cmath>
 
 OutputWriter::OutputWriter(const std::string& outputDir) 
-    : outputDir(outputDir), logHeaderWritten(false), zoneHeaderWritten(false), sphericalFirstWritten(false) {
+    : outputDir(outputDir), logHeaderWritten(false), zoneHeaderWritten(false),
+      sphericalFirstWritten(false), streamfunctionSummaryHeaderWritten(false),
+      condensationLogHeaderWritten(false), evaporationLogHeaderWritten(false),
+      moistureBalanceLogHeaderWritten(false) {
     if (!std::filesystem::exists(outputDir)) {
         std::filesystem::create_directories(outputDir);
     }
@@ -26,8 +29,9 @@ void OutputWriter::writeParticleSnapshot(const std::vector<Parcel>& parcels, int
 
     if (!file.is_open()) return;
 
-    // Added radial_velocity for Stage 2 analysis while preserving Stage 1 columns
-    file << "step,particle_id,x,y,z,vx,vy,vz,temperature,radius,speed,radial_velocity\n";
+    // Added radial_velocity for Stage 2 analysis while preserving Stage 1 columns.
+    // q_p appended at end for Stage 4 Sprint 4.1 moisture state.
+    file << "step,particle_id,x,y,z,vx,vy,vz,temperature,radius,speed,radial_velocity,q_p\n";
     for (const auto& p : parcels) {
         double radius = p.r.norm();
         double radial_velocity = (radius > 1e-9) ? (p.v.dot(p.r) / radius) : 0.0;
@@ -35,7 +39,8 @@ void OutputWriter::writeParticleSnapshot(const std::vector<Parcel>& parcels, int
         file << step << "," << p.id << ","
              << p.r.x << "," << p.r.y << "," << p.r.z << ","
              << p.v.x << "," << p.v.y << "," << p.v.z << ","
-             << p.T_p << "," << radius << "," << p.v.norm() << "," << radial_velocity << "\n";
+             << p.T_p << "," << radius << "," << p.v.norm() << "," << radial_velocity << ","
+             << p.specificHumidity << "\n";
     }
     file.close();
     std::cout << "Particle snapshot written: " << filename << std::endl;
@@ -82,6 +87,107 @@ void OutputWriter::appendTemperatureZoneLog(int step, double tempEq, double temp
     file.close();
 }
 
+void OutputWriter::appendCondensationLog(
+    int step,
+    double condensationThisStep, double cumulativeCondensation,
+    double latentHeatingThisStep, double cumulativeLatentHeating,
+    long long eventsThisStep, long long cumulativeEvents)
+{
+    std::string filename = outputDir + "/condensation_log.csv";
+    std::ofstream file(filename, std::ios::app);
+
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open condensation log: " << filename << std::endl;
+        return;
+    }
+
+    if (!condensationLogHeaderWritten) {
+        file << "step,"
+             << "condensation_this_step,cumulative_condensation,"
+             << "latent_heating_this_step,cumulative_latent_heating,"
+             << "condensation_events_this_step,cumulative_condensation_events\n";
+        condensationLogHeaderWritten = true;
+    }
+
+    file << std::fixed << std::setprecision(10)
+         << step                    << ","
+         << condensationThisStep    << ","
+         << cumulativeCondensation  << ","
+         << latentHeatingThisStep   << ","
+         << cumulativeLatentHeating << ","
+         << eventsThisStep          << ","
+         << cumulativeEvents        << "\n";
+
+    file.close();
+}
+
+void OutputWriter::appendEvaporationLog(
+    int step,
+    double evaporationThisStep, double cumulativeEvaporation,
+    long long eventsThisStep, long long cumulativeEvents)
+{
+    std::string filename = outputDir + "/evaporation_log.csv";
+    std::ofstream file(filename, std::ios::app);
+
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open evaporation log: " << filename << std::endl;
+        return;
+    }
+
+    if (!evaporationLogHeaderWritten) {
+        file << "step,"
+             << "evaporation_this_step,cumulative_evaporation,"
+             << "evaporation_events_this_step,cumulative_evaporation_events\n";
+        evaporationLogHeaderWritten = true;
+    }
+
+    file << std::fixed << std::setprecision(10)
+         << step                  << ","
+         << evaporationThisStep   << ","
+         << cumulativeEvaporation << ","
+         << eventsThisStep        << ","
+         << cumulativeEvents      << "\n";
+
+    file.close();
+}
+
+void OutputWriter::appendMoistureBalanceLog(
+    int step,
+    double totalQ, double initialTotalQ,
+    double cumulativeEvaporation, double cumulativeCondensation,
+    double expectedTotalQ, double waterBalanceError,
+    double waterBalanceRelativeError, const std::string& status)
+{
+    std::string filename = outputDir + "/moisture_balance.csv";
+    std::ofstream file(filename, std::ios::app);
+
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open moisture balance log: " << filename << std::endl;
+        return;
+    }
+
+    if (!moistureBalanceLogHeaderWritten) {
+        file << "step,total_q,initial_total_q,"
+             << "cumulative_evaporation,cumulative_condensation,"
+             << "expected_total_q,water_balance_error,"
+             << "water_balance_relative_error,water_balance_status\n";
+        moistureBalanceLogHeaderWritten = true;
+    }
+
+    file << std::fixed << std::setprecision(10)
+         << step                      << ","
+         << totalQ                    << ","
+         << initialTotalQ             << ","
+         << cumulativeEvaporation     << ","
+         << cumulativeCondensation    << ","
+         << expectedTotalQ            << ","
+         << waterBalanceError         << ","
+         << waterBalanceRelativeError << ","
+         << status                    << "\n";
+
+    file.close();
+}
+
 void OutputWriter::writeCoarseGridSnapshot(const std::unordered_map<CoarseCellIndex, CoarseCellData, CoarseCellIndexHash>& cells, int step) const {
     std::string filename = outputDir + "/coarse_grid_step_" + formatStepZeroPadded(step) + ".csv";
     std::ofstream file(filename);
@@ -91,7 +197,8 @@ void OutputWriter::writeCoarseGridSnapshot(const std::unordered_map<CoarseCellIn
         return;
     }
 
-    file << "step,cell_ix,cell_iy,cell_iz,center_x,center_y,center_z,radius,altitude,latitude,particle_count,mean_vx,mean_vy,mean_vz,mean_kinetic_temperature,target_temperature\n";
+    // q_mean appended at end for Stage 4 Sprint 4.3 moisture statistics.
+    file << "step,cell_ix,cell_iy,cell_iz,center_x,center_y,center_z,radius,altitude,latitude,particle_count,mean_vx,mean_vy,mean_vz,mean_kinetic_temperature,target_temperature,q_mean\n";
 
     for (const auto& pair : cells) {
         const CoarseCellIndex& idx = pair.first;
@@ -112,11 +219,35 @@ void OutputWriter::writeCoarseGridSnapshot(const std::unordered_map<CoarseCellIn
              << data.particleCount << ","
              << data.meanVelocity.x << "," << data.meanVelocity.y << "," << data.meanVelocity.z << ","
              << data.meanKineticTemperature << ","
-             << data.targetTemperature << "\n";
+             << data.targetTemperature << ","
+             << data.q_mean << "\n";
     }
 
     file.close();
     std::cout << "Coarse grid snapshot written: " << filename << std::endl;
+
+    // Stage 4 Sprint 4.3: coarse humidity diagnostics.
+    {
+        double q_min  =  1e30;
+        double q_max  = -1e30;
+        double q_sum  =  0.0;
+        int    count  =  0;
+        for (const auto& pair : cells) {
+            const CoarseCellData& d = pair.second;
+            if (d.particleCount > 0) {
+                q_min  = std::min(q_min, d.q_mean);
+                q_max  = std::max(q_max, d.q_mean);
+                q_sum += d.q_mean;
+                ++count;
+            }
+        }
+        if (count > 0) {
+            std::cout << "  Coarse humidity stats at step " << step
+                      << ": min_q_mean=" << q_min
+                      << ", max_q_mean=" << q_max
+                      << ", mean_q_mean=" << (q_sum / count) << std::endl;
+        }
+    }
 }
 
 void OutputWriter::writeParticleSphericalDiagnostics(
@@ -133,9 +264,10 @@ void OutputWriter::writeParticleSphericalDiagnostics(
         return;
     }
 
+    // q_p appended at end for Stage 4 Sprint 4.1 moisture state.
     file << "step,particle_id,x,y,z,vx,vy,vz,"
          << "radius,altitude,latitude_deg,longitude_deg,"
-         << "v_r,v_theta,v_phi_inertial,v_phi_relative,temperature\n";
+         << "v_r,v_theta,v_phi_inertial,v_phi_relative,temperature,q_p\n";
 
     // Capture first valid particle for the one-time summary log
     bool sampleCaptured = false;
@@ -165,7 +297,8 @@ void OutputWriter::writeParticleSphericalDiagnostics(
              << s.meridionalVelocity   << ","
              << s.zonalVelocityInertial << ","
              << s.zonalVelocityRelative << ","
-             << p.T_p << "\n";
+             << p.T_p << ","
+             << p.specificHumidity << "\n";
 
         if (!sampleCaptured) {
             sampleLat      = s.latitudeDeg;
@@ -247,4 +380,77 @@ void OutputWriter::writeCirculationAverages(
     std::cout << "  Bins with samples:    " << binsWritten    << std::endl;
     std::cout << "  Max |mean_v_theta|:   " << maxAbsVTheta   << std::endl;
     std::cout << "  Max |mean_mass_flux|: " << maxAbsMassFlux << std::endl;
+}
+
+void OutputWriter::writeStreamfunction(
+    int step,
+    const std::vector<StreamfunctionCell>&  cells,
+    const StreamfunctionSummary&            summary)
+{
+    // ---- Per-step Psi grid file ----
+    std::string gridFile = outputDir + "/streamfunction_step_" + formatStepZeroPadded(step) + ".csv";
+    {
+        std::ofstream file(gridFile);
+        if (!file.is_open()) {
+            std::cerr << "Error: Could not open streamfunction file: " << gridFile << std::endl;
+            return;
+        }
+
+        file << "step,latitude_bin,altitude_bin,latitude_center_deg,altitude_center,"
+             << "samples,mean_v_theta,mean_mass_flux,psi\n";
+
+        for (const auto& sc : cells) {
+            // Guard against any residual NaN / inf before writing
+            if (!std::isfinite(sc.psi)               ||
+                !std::isfinite(sc.meanVTheta)         ||
+                !std::isfinite(sc.meanMassFlux)       ||
+                !std::isfinite(sc.latitudeCenterDeg)  ||
+                !std::isfinite(sc.altitudeCenter)) {
+                std::cerr << "[WARNING] Non-finite streamfunction cell at lat_bin="
+                          << sc.latitudeBin << " alt_bin=" << sc.altitudeBin
+                          << " — row skipped.\n";
+                continue;
+            }
+
+            file << std::fixed << std::setprecision(6)
+                 << step                  << ","
+                 << sc.latitudeBin        << ","
+                 << sc.altitudeBin        << ","
+                 << sc.latitudeCenterDeg  << ","
+                 << sc.altitudeCenter     << ","
+                 << sc.samples            << ","
+                 << sc.meanVTheta         << ","
+                 << sc.meanMassFlux       << ","
+                 << sc.psi                << "\n";
+        }
+        file.close();
+    }
+
+    // ---- Append one row to the running summary file ----
+    std::string summaryFile = outputDir + "/streamfunction_summary.csv";
+    {
+        std::ofstream file(summaryFile, std::ios::app);
+        if (!file.is_open()) {
+            std::cerr << "Error: Could not open streamfunction summary: " << summaryFile << std::endl;
+            return;
+        }
+
+        if (!streamfunctionSummaryHeaderWritten) {
+            file << "step,max_abs_psi,min_psi,max_psi,cells_with_samples\n";
+            streamfunctionSummaryHeaderWritten = true;
+        }
+
+        file << std::fixed << std::setprecision(6)
+             << step               << ","
+             << summary.maxAbsPsi  << ","
+             << summary.minPsi     << ","
+             << summary.maxPsi     << ","
+             << summary.cellsWithSamples << "\n";
+        file.close();
+    }
+
+    std::cout << "Streamfunction written: " << gridFile << std::endl;
+    std::cout << "Streamfunction summary updated: " << summaryFile << std::endl;
+    std::cout << "  Max |Psi|:          " << summary.maxAbsPsi        << std::endl;
+    std::cout << "  Cells with samples: " << summary.cellsWithSamples << std::endl;
 }

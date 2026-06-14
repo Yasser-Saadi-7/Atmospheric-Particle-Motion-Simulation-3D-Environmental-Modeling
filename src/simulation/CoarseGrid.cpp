@@ -30,10 +30,13 @@ void CoarseGrid::build(const std::vector<Parcel>& parcels, const Environment& en
     for (size_t i = 0; i < parcels.size(); ++i) {
         CoarseCellIndex idx = positionToCell(parcels[i].r);
         CoarseCellData& data = cells[idx];
-        
+
         data.particleIndices.push_back(static_cast<int>(i));
         data.particleCount++;
         data.meanVelocity += parcels[i].v;
+
+        // Stage 4 Sprint 4.3: accumulate per-particle specific humidity.
+        data.q_sum += parcels[i].specificHumidity;
     }
 
     // ----------------------------------------------------------------
@@ -73,6 +76,16 @@ void CoarseGrid::build(const std::vector<Parcel>& parcels, const Environment& en
 
         // 4. Evaluate Stage 2 Thermal Target using the simplified environment model
         data.targetTemperature = environment.computeTargetTemperatureSimplified(data.cellCenter);
+
+        // 5. Stage 4 Sprint 4.3: compute mean specific humidity q_mean.
+        if (data.particleCount > 0) {
+            data.q_mean = data.q_sum / static_cast<double>(data.particleCount);
+        } else {
+            data.q_mean = 0.0;
+        }
+        if (!std::isfinite(data.q_mean) || data.q_mean < 0.0) {
+            data.q_mean = 0.0;
+        }
     }
 }
 

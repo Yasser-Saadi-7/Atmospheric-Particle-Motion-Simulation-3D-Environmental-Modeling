@@ -17,9 +17,11 @@ add_executable(AtmosphericSimulation
     src/simulation/CoarseGrid.cpp
     src/simulation/BoundaryHandler.cpp
     src/simulation/Integrator.cpp
+    src/simulation/MoistureModel.cpp
     src/io/OutputWriter.cpp
     src/analysis/Diagnostics.cpp
     src/analysis/CirculationAccumulator.cpp
+    src/analysis/StreamfunctionCalculator.cpp
     src/utils/SphericalUtils.cpp
 )
 

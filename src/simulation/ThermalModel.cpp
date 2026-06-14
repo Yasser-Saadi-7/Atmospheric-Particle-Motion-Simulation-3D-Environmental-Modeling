@@ -44,4 +44,24 @@ void ThermalModel::applyThermalCollision(Parcel& particle, const CoarseCellData&
     // T_p = |v_th|^2 / 3.0 (model-unit kinetic temperature convention)
     double v_th_sq = v_th_new.x * v_th_new.x + v_th_new.y * v_th_new.y + v_th_new.z * v_th_new.z;
     particle.T_p = std::max(0.0, v_th_sq / 3.0);
+
+    // 7. Stage 4 Sprint 4.4: humidity mixing.
+    // q_p += alpha_q * (q_mean_cell - q_p)
+    // Applied only inside this collision event — same stochastic gate as velocity exchange.
+    if (config.enableHumidityMixing && coarseCell.particleCount > 0) {
+        double alphaQ = (config.humidityMixingAlpha >= 0.0)
+                        ? config.humidityMixingAlpha
+                        : config.thermalExchangeAlpha;
+        alphaQ = std::clamp(alphaQ, 0.0, 1.0);
+
+        particle.specificHumidity += alphaQ * (coarseCell.q_mean - particle.specificHumidity);
+
+        // Numerical safety: keep q_p finite, non-negative, and bounded.
+        if (!std::isfinite(particle.specificHumidity) || particle.specificHumidity < 0.0) {
+            particle.specificHumidity = 0.0;
+        }
+        if (particle.specificHumidity > config.maxSpecificHumidity) {
+            particle.specificHumidity = config.maxSpecificHumidity;
+        }
+    }
 }
