@@ -1,0 +1,34 @@
+{
+  "generated_at": "2026-06-19T18:53:02Z",
+  "input_folder": "/home/yassersadi7/projects/AtmosphericSimulation/build/output",
+  "latest_step_detected": 100000,
+  "particle_total_count": 10000,
+  "counts": {
+    "html": 15,
+    "png": 13,
+    "report_figs": 13,
+    "animations": 2
+  },
+  "waterBalance": {
+    "latest_step": 100000,
+    "latest_total_q": 7.1300767373,
+    "latest_expected_total_q": 7.1827559954,
+    "latest_relative_error": -0.0073341289,
+    "max_abs_relative_error": 0.0073341289,
+    "recommended_status": "WARNING"
+  },
+  "evaporationCondensation": {
+    "latest_step": 100000,
+    "latest_evap_rate": 0.0126581283,
+    "latest_cond_rate": 0.0219964821,
+    "total_evaporation": 0.8872422475,
+    "total_condensation": 56.1081987803
+  },
+  "warnings": [],
+  "missing_optional_files": [],
+  "stage3_outputs_available": true,
+  "stage4_outputs_available": true,
+  "streamfunction_available": true,
+  "particle_viewer_available": true,
+  "latestStep": 100000
+}
