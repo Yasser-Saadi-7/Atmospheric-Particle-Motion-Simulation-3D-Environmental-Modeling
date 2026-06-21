@@ -71,3 +71,7 @@ visualization_output_failed_*/
 
 # Archives
 *.zip
+
+# Distribution packages
+distribution/
+AtmosphericSimulation_Visualization/
