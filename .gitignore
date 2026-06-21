@@ -46,3 +46,14 @@ compile_commands.json
 
 # Debug information files
 *.dwovenv/
+
+# Python virtual environment
+viz_env/
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Temporary / backup outputs
+visualization_output_failed_*/
+*.zip

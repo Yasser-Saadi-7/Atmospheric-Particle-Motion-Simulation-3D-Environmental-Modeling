@@ -13,11 +13,11 @@ Generated outputs (only for columns that exist):
   html/particle_3d_vtheta.html
   html/particle_3d_qp.html
 
-  png/particle_3d_temperature_preview.png
-  png/particle_3d_vr_preview.png
-  animations/particle_animation_preview.png   (temperature preview)
+  png/particle_preview_temperature.png   (via particle_preview_builder.py)
+  png/particle_preview_vr.png
 
-All pages use the professional layout from plotly_3d_style.py.
+Gallery x-z previews are generated separately by particle_preview_builder.py.
+All HTML pages use the professional layout from plotly_3d_style.py.
 ==========================================================
 """
 
@@ -32,15 +32,12 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 from data_loader import (
     read_csv_safe, normalize_columns, get_column,
     find_latest_file, downsample_dataframe,
-    extract_step_from_filename, set_mpl_style,
+    extract_step_from_filename,
 )
 from plotly_3d_style import (
     VARIABLE_CONFIG, VIEWER_MODES,
@@ -178,58 +175,6 @@ def _build_3d_viewer(
 
 
 # ──────────────────────────────────────────────────────────────────────────
-# Preview PNG (matplotlib)
-# ──────────────────────────────────────────────────────────────────────────
-
-def _mpl_preview(
-    x: np.ndarray,
-    y: np.ndarray,
-    z: np.ndarray,
-    color_vals: np.ndarray,
-    color_label: str,
-    var_name: str,
-    title: str,
-    png_path: str,
-    dpi: int = 120,
-) -> bool:
-    """Save a matplotlib 3D preview PNG with professional light background."""
-    try:
-        os.makedirs(os.path.dirname(os.path.abspath(png_path)), exist_ok=True)
-        _, cmin, cmax = get_color_config(var_name, color_vals)
-        mpl_cmap = {
-            "T_p":    "plasma",
-            "v_r":    "RdBu_r",
-            "v_theta":"RdBu_r",
-            "q_p":    "YlGnBu",
-        }.get(var_name, "plasma")
-
-        set_mpl_style()
-        fig = plt.figure(figsize=(7, 7), facecolor="#F8FAFC")
-        ax  = fig.add_subplot(111, projection="3d")
-        sc  = ax.scatter(x, y, z, c=color_vals, cmap=mpl_cmap,
-                         vmin=cmin, vmax=cmax,
-                         s=2.5, alpha=0.82, linewidths=0)
-        cb = plt.colorbar(sc, ax=ax, shrink=0.52, pad=0.04, label=color_label)
-        cb.ax.tick_params(labelsize=8, colors="#1E293B")
-        cb.set_label(color_label, fontsize=9, color="#1E293B")
-        ax.set_title(title, fontsize=10, fontweight="bold",
-                     color="#0F172A", pad=6)
-        ax.set_axis_off()
-        ax.set_facecolor("#F8FAFC")
-        fig.patch.set_facecolor("#F8FAFC")
-        ax.view_init(elev=20, azim=45)
-        plt.tight_layout(pad=0.5)
-        fig.savefig(png_path, dpi=dpi, bbox_inches="tight",
-                    facecolor="#F8FAFC")
-        plt.close(fig)
-        return True
-    except Exception as exc:
-        plt.close("all")
-        print(f"  [WARN] 3D preview PNG failed ({os.path.basename(png_path)}): {exc}")
-        return False
-
-
-# ──────────────────────────────────────────────────────────────────────────
 # Main public function
 # ──────────────────────────────────────────────────────────────────────────
 
@@ -279,20 +224,19 @@ def plot_3d_viewers(
 
     # ── Per-variable viewer generation ───────────────────────────────────
     modes = [
-        ("T_p",     "particle_3d_temperature", "png/particle_3d_temperature_preview.png"),
-        ("v_r",     "particle_3d_vr",           "png/particle_3d_vr_preview.png"),
-        ("v_theta", "particle_3d_vtheta",        None),
-        ("q_p",     "particle_3d_qp",            None),
+        ("T_p",     "particle_3d_temperature"),
+        ("v_r",     "particle_3d_vr"),
+        ("v_theta", "particle_3d_vtheta"),
+        ("q_p",     "particle_3d_qp"),
     ]
 
-    for var_name, stem, preview_png in modes:
+    for var_name, stem in modes:
         pfig = _build_3d_viewer(df, x, y, z, var_name, step, inner_r, outer_r)
         if pfig is None:
             if verbose:
                 print(f"  [INFO] Column '{var_name}' missing — skipping {stem}.")
             continue
 
-        vcfg     = VARIABLE_CONFIG.get(var_name, {})
         html_out = os.path.join(out_dir, "html", f"{stem}.html")
 
         # Write professional page via shared module
@@ -313,41 +257,11 @@ def plot_3d_viewers(
             print(f"  [ERROR] Writing {stem}.html failed: {exc}")
             continue
 
-        # ── Preview PNG ───────────────────────────────────────────────────
-        if preview_png:
-            col = get_column(df, var_name)
-            if col:
-                vals   = df[col].values.astype(float)
-                label  = vcfg.get("label", var_name)
-                p_path = os.path.join(out_dir, preview_png)
-                ok = _mpl_preview(x, y, z, vals, label, var_name,
-                                  f"Particle shell — {label} (step {step:,})",
-                                  p_path)
-                if ok:
-                    generated.append(p_path)
-                    # 300-DPI report figure
-                    rpt_stem = os.path.splitext(os.path.basename(preview_png))[0]
-                    rpt_path = os.path.join(out_dir, "report_figures",
-                                            rpt_stem + "_300dpi.png")
-                    _mpl_preview(x, y, z, vals, label, var_name,
-                                 f"Particle shell — {label} (step {step:,})",
-                                 rpt_path, dpi=300)
-                    generated.append(rpt_path)
-                    if verbose:
-                        print(f"  [OK] {os.path.relpath(p_path)}")
-
-    # ── Shared animation preview PNG (temperature) ────────────────────────
-    t_col = get_column(df, "T_p")
-    if t_col:
-        t_vals  = df[t_col].values.astype(float)
-        anim_p  = os.path.join(out_dir, "animations",
-                               "particle_animation_preview.png")
-        ok = _mpl_preview(x, y, z, t_vals, "Temperature T\u209A", "T_p",
-                          f"Particle shell — Temperature (step {step:,})",
-                          anim_p)
-        if ok:
-            generated.append(anim_p)
-            if verbose:
-                print(f"  [OK] {os.path.relpath(anim_p)}")
+    # ── x-z gallery previews (temperature + radial velocity) ──────────────
+    from particle_preview_builder import generate_static_previews
+    preview_files = generate_static_previews(
+        input_dir, out_dir, max_particles=max_particles, verbose=verbose,
+    )
+    generated.extend(preview_files)
 
     return generated

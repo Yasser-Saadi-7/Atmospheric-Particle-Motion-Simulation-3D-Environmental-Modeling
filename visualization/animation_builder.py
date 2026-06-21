@@ -6,7 +6,7 @@ Generates professional interactive particle animations:
   • Plotly HTML animations with custom controls (Play/Pause/
     Restart/Speed), stable title, step/phase display, and
     phase timeline — matching the static viewer design.
-  • GIF preview and PNG thumbnail via matplotlib.
+  • GIF preview and PNG thumbnail via particle_preview_builder (x-z projection).
 
 All pages use the professional layout from plotly_3d_style.py.
 
@@ -19,7 +19,6 @@ Planet reference is a static trace (not duplicated per frame).
 ==========================================================
 """
 
-import io
 import os
 import sys
 
@@ -31,15 +30,12 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 from data_loader import (
     read_csv_safe, normalize_columns, get_column,
     find_step_files, downsample_dataframe,
-    extract_step_from_filename, set_mpl_style,
+    extract_step_from_filename,
 )
 from plot_particles_3d import _load_particle_xyz, _infer_radii
 from plotly_3d_style import (
@@ -230,100 +226,6 @@ def _build_plotly_animation(
 
 
 # ──────────────────────────────────────────────────────────────────────────
-# GIF builder
-# ──────────────────────────────────────────────────────────────────────────
-
-def _build_gif(
-    files: List[str],
-    var_name: str,
-    out_path: str,
-    max_particles: int,
-    fps: int = 8,
-) -> bool:
-    """Build a GIF animation using imageio + matplotlib (light background)."""
-    try:
-        import imageio.v2 as imageio
-    except ImportError:
-        try:
-            import imageio  # type: ignore[no-redef]
-        except ImportError:
-            print("  [WARN] imageio not installed — skipping GIF generation.")
-            return False
-
-    vcfg  = VARIABLE_CONFIG.get(var_name, {})
-    label = vcfg.get("label", var_name)
-    mpl_cmap = {
-        "T_p": "plasma", "v_r": "RdBu_r",
-        "v_theta": "RdBu_r", "q_p": "YlGnBu",
-    }.get(var_name, "plasma")
-
-    try:
-        # Pre-compute global color range
-        all_vals = []
-        for fpath in files:
-            df, _ = _load_frame(fpath, max_particles)
-            if df is None:
-                continue
-            col = get_column(df, var_name)
-            if col:
-                all_vals.extend(df[col].dropna().tolist())
-
-        if not all_vals:
-            return False
-
-        all_arr  = np.array(all_vals, dtype=float)
-        _, vmin, vmax = get_color_config(var_name, all_arr)
-
-        frames_imgs = []
-        set_mpl_style()
-
-        for fpath in files:
-            df, step = _load_frame(fpath, max_particles)
-            if df is None or step is None:
-                continue
-            xyz = _load_particle_xyz(df)
-            if xyz is None:
-                continue
-            x, y, z = xyz
-            col  = get_column(df, var_name)
-            vals = df[col].values.astype(float) if col else np.zeros(len(x))
-
-            fig = plt.figure(figsize=(6, 6), facecolor="#F8FAFC")
-            ax  = fig.add_subplot(111, projection="3d")
-            sc  = ax.scatter(x, y, z, c=vals, cmap=mpl_cmap,
-                             vmin=vmin, vmax=vmax,
-                             s=3.0, alpha=0.82, linewidths=0)
-            cb = plt.colorbar(sc, ax=ax, shrink=0.48, pad=0.04, label=label)
-            cb.ax.tick_params(labelsize=7, colors="#1E293B")
-            cb.set_label(label, fontsize=8, color="#1E293B")
-            ax.set_title(f"Step {step:,}", fontsize=16, fontweight="bold",
-                         color="#0F172A", pad=6)
-            ax.set_axis_off()
-            ax.set_facecolor("#F8FAFC")
-            fig.patch.set_facecolor("#F8FAFC")
-            ax.view_init(elev=18, azim=45)
-
-            buf = io.BytesIO()
-            fig.savefig(buf, format="png", dpi=90,
-                        facecolor="#F8FAFC", bbox_inches="tight")
-            plt.close(fig)
-            buf.seek(0)
-            frames_imgs.append(imageio.imread(buf))
-
-        if not frames_imgs:
-            return False
-
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        imageio.mimsave(out_path, frames_imgs, fps=fps, loop=0)
-        return True
-
-    except Exception as exc:
-        plt.close("all")
-        print(f"  [WARN] GIF generation failed: {exc}")
-        return False
-
-
-# ──────────────────────────────────────────────────────────────────────────
 # Main public function
 # ──────────────────────────────────────────────────────────────────────────
 
@@ -357,10 +259,9 @@ def build_particle_animations(
         print(f"  [WARN] Only {n_files} snapshot file(s) — animation may be sparse.")
 
     html_files = _select_frames(files, MAX_FRAMES_HTML)
-    gif_files  = _select_frames(files, MAX_FRAMES_GIF)
 
     if verbose:
-        print(f"  [ANIM] {len(html_files)} HTML frames, {len(gif_files)} GIF frames.")
+        print(f"  [ANIM] {len(html_files)} HTML frames.")
 
     # ── Infer shell geometry from first file ──────────────────────────────
     df0, _ = _load_frame(html_files[0], max_particles)
@@ -416,15 +317,15 @@ def build_particle_animations(
         except Exception as exc:
             print(f"  [ERROR] Writing {stem}.html failed: {exc}")
 
-    # ── GIF preview (temperature) ─────────────────────────────────────────
-    gif_path = os.path.join(out_dir, "animations",
-                            "particle_animation_preview.gif")
-    ok = _build_gif(gif_files, "T_p", gif_path, max_particles)
-    if ok:
-        generated.append(gif_path)
-        if verbose:
-            print(f"  [OK] {os.path.relpath(gif_path)}")
-    else:
-        print("  [WARN] GIF preview not generated (imageio missing or failed).")
+    # ── GIF preview (temperature, x-z projection) ─────────────────────────
+    from particle_preview_builder import save_particle_preview_gif
+    gif_files_out = save_particle_preview_gif(
+        input_dir, out_dir,
+        var_name="T_p",
+        max_particles=min(max_particles, 3000),
+        max_frames=MAX_FRAMES_GIF,
+        verbose=verbose,
+    )
+    generated.extend(gif_files_out)
 
     return generated
