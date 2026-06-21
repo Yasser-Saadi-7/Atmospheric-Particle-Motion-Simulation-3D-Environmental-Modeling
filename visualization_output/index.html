@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AtmosphericSimulation — Visualization Dashboard</title>
+  <meta name="description" content="Interactive visualization portal for a 3D particle-based planetary atmosphere simulation." />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<!-- ============================================================
+     Site Header
+============================================================ -->
+<header class="site-header" role="banner">
+  <div class="header-inner">
+    <a class="site-logo" href="#overview">⬡ AtmosphericSim</a>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a href="#overview"      class="is-active" data-nav="overview">Overview</a>
+      <a href="#main-results"  data-nav="main-results">Results</a>
+      <a href="#diagnostics"   data-nav="diagnostics">Diagnostics</a>
+      <a href="#gallery"       data-nav="gallery">Gallery</a>
+      <a href="#export"        data-nav="export">Export</a>
+    </nav>
+    <button class="theme-toggle" id="theme-toggle" type="button"
+            aria-label="Switch to dark mode" title="Switch to dark mode">
+      <span class="theme-toggle-icon" aria-hidden="true">☾</span>
+    </button>
+  </div>
+</header>
+
+<main id="main-content">
+
+<!-- ============================================================
+     A. Hero / Project Overview
+============================================================ -->
+<section class="hero" id="overview" aria-labelledby="hero-heading">
+  <div class="hero-inner container">
+    <div class="hero-content">
+      <p class="hero-eyebrow">3D Particle-Based Planetary Atmosphere</p>
+      <h1 id="hero-heading">AtmosphericSimulation</h1>
+      <p class="hero-desc">
+        Explore saved simulation results through interactive 3D particle views, atmospheric
+        animations, circulation diagnostics, moisture fields, and report-ready figures.
+      </p>
+      <p class="hero-support">
+        All visualizations are generated automatically from exported C++ simulation data.
+      </p>
+
+      <div class="hero-stats" id="hero-stats" aria-live="polite">
+        <div class="hero-stat">
+          <div class="hero-stat-label">Simulation Steps</div>
+          <div class="hero-stat-value" id="stat-steps">100,000</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-label">Particles</div>
+          <div class="hero-stat-value" id="stat-particles">10,000</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-label">Geometry</div>
+          <div class="hero-stat-value">3D Spherical Shell</div>
+        </div>
+        <div class="hero-stat hero-stat-wide">
+          <div class="hero-stat-label">Generated Outputs</div>
+          <div class="hero-stat-value" id="stat-outputs">—</div>
+          <div class="hero-stat-sub" id="stat-outputs-sub"></div>
+          <div class="hero-stat-progress" role="progressbar"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+               id="stat-outputs-bar">
+            <div class="hero-stat-progress-fill" id="stat-outputs-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#main-results">Explore Visualizations &rarr;</a>
+        <a class="btn btn-outline hero-btn-outline"
+           href="html/particle_3d_temperature.html"
+           target="_blank" rel="noopener noreferrer">Open 3D Viewer</a>
+        <a class="hero-link-secondary" href="#gallery">View Gallery</a>
+      </div>
+    </div>
+
+    <aside class="hero-preview-col" aria-label="Atmospheric particle shell preview">
+      <a class="hero-preview-card" id="hero-preview-link"
+         href="html/particle_3d_temperature.html"
+         target="_blank" rel="noopener noreferrer"
+         aria-label="Open interactive 3D temperature viewer">
+        <div class="hero-preview-glow" aria-hidden="true"></div>
+        <div class="hero-preview-badge">Interactive Preview</div>
+        <div class="hero-preview-media" id="hero-preview-media">
+          <img id="hero-preview-img" class="hero-preview-img"
+               src="" alt="Atmospheric particle shell coloured by temperature" hidden />
+          <div class="hero-preview-fallback" id="hero-preview-fallback">
+            <div class="hero-preview-fallback-icon" aria-hidden="true">&#127760;</div>
+            <p>Interactive 3D viewer available</p>
+            <span class="btn btn-primary btn-sm">Open 3D Viewer</span>
+          </div>
+        </div>
+        <div class="hero-preview-tags" aria-hidden="true">
+          <span class="hero-preview-tag">Temperature</span>
+          <span class="hero-preview-tag">Velocity</span>
+          <span class="hero-preview-tag">Humidity</span>
+        </div>
+        <p class="hero-preview-caption">Interactive 3D atmospheric particle shell</p>
+        <p class="hero-preview-hint">Rotate, zoom, and inspect particle fields</p>
+        <span class="hero-preview-mode">Temperature mode</span>
+      </a>
+    </aside>
+  </div>
+</section>
+
+<!-- ============================================================
+     Phase Timeline
+============================================================ -->
+<section class="section" id="phases" aria-labelledby="phases-heading">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-accent" style="background:var(--primary);"></div>
+      <div>
+        <h2 class="section-title" id="phases-heading">Simulation Phases</h2>
+        <p class="section-subtitle">Four progressive stages from hydrostatic spin-up to full moisture coupling.</p>
+      </div>
+    </div>
+    <div class="timeline" id="phase-timeline" aria-label="Simulation phase timeline">
+      <!-- Populated by dashboard.js -->
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     B. Main Results
+============================================================ -->
+<section class="section" id="main-results" aria-labelledby="results-heading">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-accent" style="background:var(--accent-results);"></div>
+      <div>
+        <h2 class="section-title" id="results-heading">Main Results</h2>
+        <p class="section-subtitle">Interactive 3D viewers, animations, and primary scientific diagnostics.</p>
+      </div>
+    </div>
+    <div class="grid-auto" id="main-results-cards" aria-label="Main results navigation cards">
+      <!-- Populated by dashboard.js -->
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     C. Diagnostics
+============================================================ -->
+<section class="section" id="diagnostics" aria-labelledby="diagnostics-heading">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-accent" style="background:var(--accent-diag);"></div>
+      <div>
+        <h2 class="section-title" id="diagnostics-heading">Diagnostics</h2>
+        <p class="section-subtitle">Water balance, evaporation / condensation, temperature and energy time series.</p>
+      </div>
+    </div>
+    <div class="grid-auto" id="diagnostics-cards" aria-label="Diagnostic output cards">
+      <!-- Populated by dashboard.js -->
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     D. Report Figure Gallery
+============================================================ -->
+<section class="section" id="gallery" aria-labelledby="gallery-heading">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-accent" style="background:var(--accent-gallery);"></div>
+      <div>
+        <h2 class="section-title" id="gallery-heading">Report Figure Gallery</h2>
+        <p class="section-subtitle">Click any image to open fullscreen. PNG and GIF figures grouped by category.</p>
+      </div>
+    </div>
+    <div id="preview-gallery" aria-label="Report figure gallery">
+      <!-- Populated by dashboard.js -->
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     E. Export & Documentation
+============================================================ -->
+<section class="section" id="export" aria-labelledby="export-heading">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-accent" style="background:var(--accent-export);"></div>
+      <div>
+        <h2 class="section-title" id="export-heading">Export &amp; Documentation</h2>
+        <p class="section-subtitle">VTK export for ParaView, project documentation, and generated file inventory.</p>
+      </div>
+    </div>
+    <div class="grid-3" id="export-cards" aria-label="Export and documentation cards">
+      <!-- Populated by dashboard.js -->
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================================================
+     Footer
+============================================================ -->
+<footer class="site-footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-col-title">Project</div>
+        AtmosphericSimulation — 3D SPH Atmosphere
+      </div>
+      <div>
+        <div class="footer-col-title">Dashboard</div>
+        Stage UI-4 · Offline-compatible
+      </div>
+      <div>
+        <div class="footer-col-title">Generated</div>
+        <span id="footer-manifest-date">—</span>
+      </div>
+    </div>
+    <div id="footer-manifest-note" style="font-size:0.78rem;opacity:0.65;margin-top:0.4rem;"></div>
+    <div id="footer-input-folder" class="footer-tech" aria-label="Input data folder"></div>
+    <div style="margin-top:0.5rem;opacity:0.45;font-size:0.75rem;">
+      &copy; <span id="footer-year"></span> AtmosphericSimulation Project
+    </div>
+  </div>
+</footer>
+
+<!-- ============================================================
+     Lightbox Modal
+============================================================ -->
+<div id="lightbox-overlay" role="dialog" aria-modal="true" aria-label="Image viewer" tabindex="-1">
+  <div id="lightbox-content">
+    <button id="lightbox-close" aria-label="Close image viewer">&#x2715;</button>
+    <img id="lightbox-img" src="" alt="" />
+    <div id="lightbox-caption"></div>
+    <div id="lightbox-actions"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     Scripts
+============================================================ -->
+<script src="assets/generated_manifest.js"></script>
+<script src="assets/dashboard.js"></script>
+</body>
+</html>

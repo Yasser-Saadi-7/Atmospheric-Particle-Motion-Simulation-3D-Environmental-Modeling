@@ -1,0 +1,3 @@
+step,particle_count,min_radius,max_radius,outside_bounds,e_kin,e_grav,e_rep,e_total
+0,10000,50.0006,69.9984,0,1507.56,9776.19,649435,660719
+1000,10000,50,69.999,0,1252.86,9776.11,1.28813e-06,11029

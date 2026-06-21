@@ -1,0 +1,2 @@
+step,total_q,initial_total_q,cumulative_evaporation,cumulative_condensation,expected_total_q,water_balance_error,water_balance_relative_error,water_balance_status
+1000,21.0188754636,62.4037125282,0.0000000071,41.3848370719,21.0188754634,0.0000000002,0.0000000000,PASS

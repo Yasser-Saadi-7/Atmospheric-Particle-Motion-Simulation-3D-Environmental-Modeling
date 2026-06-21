@@ -46,3 +46,32 @@ compile_commands.json
 
 # Debug information files
 *.dwovenv/
+
+# Python virtual environment
+viz_env/
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Temporary / backup outputs
+visualization_output_failed_*/
+*.zip
+
+# Windows metadata
+*:Zone.Identifier
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Temporary files
+viz_debug.log
+visualization_output_failed_*/
+
+# Archives
+*.zip
+
+# Distribution packages
+distribution/
+AtmosphericSimulation_Visualization/

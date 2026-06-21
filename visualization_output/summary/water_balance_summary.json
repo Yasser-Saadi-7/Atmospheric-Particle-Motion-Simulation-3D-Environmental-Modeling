@@ -1,0 +1,8 @@
+{
+  "latest_step": 100000,
+  "latest_total_q": 7.1300767373,
+  "latest_expected_total_q": 7.1827559954,
+  "latest_relative_error": -0.0073341289,
+  "max_abs_relative_error": 0.0073341289,
+  "recommended_status": "WARNING"
+}
