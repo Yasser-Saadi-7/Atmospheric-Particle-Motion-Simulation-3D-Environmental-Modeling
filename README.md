@@ -44,7 +44,6 @@ The project combines:
 - [Project Structure](#project-structure)
 - [Testing and Validation](#testing-and-validation)
 - [Engineering Challenges](#engineering-challenges)
-- [Known Limitations](#known-limitations)
 - [Future Work](#future-work)
 - [Authors](#authors)
 
