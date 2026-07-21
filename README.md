@@ -77,7 +77,7 @@ with:
 - Total parcel count: `10,000`
 - Time step: `dt = 0.01`
 - Production run length: `100,000 steps`
----
+
 <p align="center">
   <img src="C:\Users\יאסר\OneDrive - ort braude college of engineering\Desktop\Final Project - Work\Dashboard.png" width="1000">
 </p>
