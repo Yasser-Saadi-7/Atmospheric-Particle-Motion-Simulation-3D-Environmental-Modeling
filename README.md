@@ -929,34 +929,6 @@ The project evaluates several areas.
 
 ---
 
-## Known Limitations
-
-The project intentionally uses a simplified model.
-
-Current limitations include:
-
-- No full Navier-Stokes solver
-- No continuous pressure field
-- No continuous physical density field
-- No complete equation of state
-- No explicit buoyancy force
-- No complete radiative-transfer model
-- No full day-night cycle
-- Constant gravity instead of `1/r^2`
-- Impermeable elastic radial boundaries
-- No land-ocean distinction
-- No topography
-- No cloud droplets
-- No precipitation
-- No full turbulence closure
-- Model-unit temperature and latent-heat coefficients
-- Particle count used as a density proxy
-- Streamfunction-like diagnostic instead of a fully physical mass streamfunction
-- Moisture activation timing requires further refinement
-- No conclusive claim of a canonical Hadley-Ferrel-Polar three-cell circulation
-
----
-
 ## Future Work
 
 Planned or recommended improvements include:
