@@ -101,6 +101,8 @@ The project was designed to:
 <p align="center">
   <img src="docs/particle_animation_preview.GIF" width="900">
 </p>
+
+![Simulation Preview](docs/particle_animation_preview.gif)
 ---
 
 ## System Architecture
