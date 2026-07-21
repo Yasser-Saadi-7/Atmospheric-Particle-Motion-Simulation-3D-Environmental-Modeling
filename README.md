@@ -81,7 +81,7 @@ with:
 <p align="center">
   <img src="docs/Dashboard.png" width="1000">
 </p>
----
+
 
 ## Main Objectives
 
@@ -98,6 +98,9 @@ The project was designed to:
 9. Produce reusable CSV outputs for scientific analysis.
 10. Automate the complete workflow from C++ build to interactive dashboard.
 
+<p align="center">
+  <img src="docs/particle_animation_preview.gif" width="900">
+</p>
 ---
 
 ## System Architecture
