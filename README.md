@@ -79,7 +79,7 @@ with:
 - Production run length: `100,000 steps`
 
 <p align="center">
-  <img src="C:\Users\יאסר\OneDrive - ort braude college of engineering\Desktop\Final Project - Work\Dashboard.png" width="1000">
+  <img src="docs/Dashboard.png" width="1000">
 </p>
 ---
 
