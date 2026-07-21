@@ -99,7 +99,7 @@ The project was designed to:
 10. Automate the complete workflow from C++ build to interactive dashboard.
 
 <p align="center">
-  <img src="docs/particle_animation_preview.GIF" width="900">
+  <img src="docs/particle_animation_preview.GIF" width="600">
 </p>
 
 ![Simulation Preview](docs/particle_animation_preview.gif)
